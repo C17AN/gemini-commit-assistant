@@ -68,11 +68,7 @@ git ai-commit  # 이제 사용 가능
 # Gemini CLI 설치
 npm install -g @google/gemini-cli
 
-# 인증 (권장)
-gemini config set-key your-api-key
-
-# 또는 Google 계정으로 로그인
-gemini auth login
+gemini # 이후 Google 계정으로 로그인
 ```
 
 ## 🎯 예시

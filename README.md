@@ -68,11 +68,7 @@ Change anytime with `ai-commit --configure`.
 # Install Gemini CLI
 npm install -g @google/gemini-cli
 
-# Authenticate (recommended)
-gemini config set-key your-api-key
-
-# Or login with Google account
-gemini auth login
+gemini # Authenticate with Google Account
 ```
 
 ## 🎯 Examples
