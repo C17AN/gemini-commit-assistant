@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/c17an/gemini-commit-assistant/blob/main/README.md
+    about: 사용법과 설정 방법을 확인해보세요
+  - name: 💬 Discussions
+    url: https://github.com/c17an/gemini-commit-assistant/discussions
+    about: 일반적인 질문이나 아이디어를 공유해보세요
+  - name: 🚀 NPM Package
+    url: https://www.npmjs.com/package/gemini-commit-assistant
+    about: NPM 패키지 정보와 설치 방법을 확인하세요

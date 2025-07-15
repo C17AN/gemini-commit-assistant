@@ -570,7 +570,7 @@ AI_MESSAGE=""
 if [ -z "$AI_MESSAGE" ]; then
     # 백그라운드에서 Gemini CLI 실행
     TEMP_OUTPUT="/tmp/gemini_output_$$"
-    (gemini --prompt "$DETAILED_MULTILINE_PROMPT" 2>&1 > "$TEMP_OUTPUT"; echo $? > "/tmp/gemini_exit_$$") &
+    (gemini --model gemini-2.5-flash --prompt "$DETAILED_MULTILINE_PROMPT" 2>&1 > "$TEMP_OUTPUT"; echo $? > "/tmp/gemini_exit_$$") &
     GEMINI_PID=$!
     
     # 브라일 애니메이션 시작
@@ -629,7 +629,7 @@ if [ -z "$AI_MESSAGE" ]; then
             
             # 단순 접근법도 애니메이션과 함께
             TEMP_OUTPUT2="/tmp/gemini_simple_$$"
-            (gemini --prompt "$SIMPLE_PROMPT" 2>&1 > "$TEMP_OUTPUT2"; echo $? > "/tmp/gemini_simple_exit_$$") &
+            (gemini --model gemini-2.5-flash --prompt "$SIMPLE_PROMPT" 2>&1 > "$TEMP_OUTPUT2"; echo $? > "/tmp/gemini_simple_exit_$$") &
             SIMPLE_PID=$!
             
             # 브라일 애니메이션으로 재시도
