@@ -1,5 +1,7 @@
 # 🤖 Gemini Commit Assistant
 
+![screenshot](./screenshot.gif)
+
 **English** | [한국어](README.ko.md)
 
 AI-powered commit message generator using Google Gemini CLI with **Korean/English language support**.

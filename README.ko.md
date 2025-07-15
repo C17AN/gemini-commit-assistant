@@ -1,5 +1,7 @@
 # 🤖 Gemini Commit Assistant
 
+![screenshot](./screenshot.gif)
+
 [English](README.md) | **한국어**
 
 Google Gemini CLI를 사용하여 **한국어/영어 지원**하는 AI 커밋 메시지 생성기입니다.

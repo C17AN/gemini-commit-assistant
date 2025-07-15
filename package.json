@@ -29,8 +29,7 @@
     "@google/gemini-cli": ">=0.1.0"
   },
   "files": [
-    "bin/",
-    "lib/",
+    "bin/ai-commit",
     "README.md",
     "LICENSE"
   ],
