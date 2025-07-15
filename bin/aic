@@ -52,6 +52,11 @@ msg() {
                 "help_example") echo "Examples:" ;;
                 "help_example_staged") echo "  aic                     # Commit staged files only" ;;
                 "help_example_all") echo "  aic --all               # Stage all files and commit" ;;
+                "help_short_cmd") echo "  aic                     # Short command" ;;
+                "help_git_alias") echo "  git aic                 # Git alias (setup required)" ;;
+                "help_setup_cmd") echo "  aic --setup             # Enable git aic command" ;;
+                "help_unsetup_cmd") echo "  aic --unsetup           # Disable git aic command" ;;
+                "help_configure_cmd") echo "  aic --configure         # Change language settings" ;;
                 "unknown_option") echo "❌ Unknown option:" ;;
                 "usage_help") echo "Usage: aic [--all|-a] [--configure] [--setup|--unsetup] [--help|-h]" ;;
                 "not_git_repo") echo "❌ Not a Git repository." ;;
@@ -131,6 +136,11 @@ msg() {
                 "help_example") echo "예시:" ;;
                 "help_example_staged") echo "  aic                     # staged 파일만 커밋" ;;
                 "help_example_all") echo "  aic --all               # 모든 파일을 staging 후 커밋" ;;
+                "help_short_cmd") echo "  aic                     # 축약 명령어" ;;
+                "help_git_alias") echo "  git aic                 # git alias (설정 필요)" ;;
+                "help_setup_cmd") echo "  aic --setup             # git aic 명령어 활성화" ;;
+                "help_unsetup_cmd") echo "  aic --unsetup           # git aic 명령어 해제" ;;
+                "help_configure_cmd") echo "  aic --configure         # 언어 설정 변경" ;;
                 "unknown_option") echo "❌ 알 수 없는 옵션:" ;;
                 "usage_help") echo "사용법: aic [--all|-a] [--configure] [--setup|--unsetup] [--help|-h]" ;;
                 "not_git_repo") echo "❌ Git 저장소가 아닙니다." ;;
@@ -234,26 +244,27 @@ configure_language() {
 
 # 최초 실행 체크 및 언어 설정
 first_time_setup() {
-    echo -e "${MAGENTA}$(msg "first_run_title")${NC}"
+    # 항상 영어로 시작 (다국어 지원을 위해)
+    echo -e "${MAGENTA}🎉 Welcome to AI Commit Assistant!${NC}"
     echo -e "${BLUE}============================================================${NC}"
-    echo -e "${BOLD}$(msg "first_run_subtitle")${NC}"
+    echo -e "${BOLD}First-time setup${NC}"
     echo -e "${BLUE}============================================================${NC}"
     echo ""
-    echo -e "${CYAN}$(msg "first_run_desc")${NC}"
+    echo -e "${CYAN}Please select your preferred language for UI and commit messages:${NC}"
     echo ""
     
-    echo -e "$(msg "configure_korean")"
-    echo -e "$(msg "configure_english")"
+    echo -e "  1. 한국어 (Korean)"
+    echo -e "  2. English"
     echo ""
     
     while true; do
-        read -p "$(msg "configure_prompt")" choice
+        read -p "Select (1-2): " choice
         case $choice in
             1)
                 LANGUAGE="ko"
                 save_config "ko"
                 echo ""
-                echo -e "${GREEN}$(msg "configure_success" "한국어")${NC}"
+                echo -e "${GREEN}✅ 언어가 설정되었습니다: 한국어${NC}"
                 echo ""
                 break
                 ;;
@@ -261,12 +272,12 @@ first_time_setup() {
                 LANGUAGE="en"
                 save_config "en"
                 echo ""
-                echo -e "${GREEN}$(msg "configure_success" "English")${NC}"
+                echo -e "${GREEN}✅ Language set to: English${NC}"
                 echo ""
                 break
                 ;;
             *)
-                echo -e "${RED}$(msg "configure_invalid")${NC}"
+                echo -e "${RED}❌ Invalid choice. Please select 1 or 2.${NC}"
                 ;;
         esac
     done
@@ -354,8 +365,8 @@ while [[ $# -gt 0 ]]; do
             echo -e "${CYAN}$(msg "help_usage")${NC}"
             echo -e "$(msg "help_staged")"
             echo -e "$(msg "help_all")"
-            echo "  aic                     # 축약 명령어"
-            echo "  git aic                 # git alias (설정 필요)"
+            echo -e "$(msg "help_short_cmd")"
+            echo -e "$(msg "help_git_alias")"
             echo ""
             echo -e "${CYAN}$(msg "help_options")${NC}"
             echo -e "$(msg "help_all_desc")"
@@ -365,9 +376,9 @@ while [[ $# -gt 0 ]]; do
             echo -e "$(msg "help_help_desc")"
             echo ""
             echo -e "${CYAN}$(msg "help_settings")${NC}"
-            echo "  aic --setup             # git aic 명령어 활성화"
-            echo "  aic --unsetup           # git aic 명령어 해제"
-            echo "  aic --configure         # 언어 설정 변경"
+            echo -e "$(msg "help_setup_cmd")"
+            echo -e "$(msg "help_unsetup_cmd")"
+            echo -e "$(msg "help_configure_cmd")"
             echo ""
             echo -e "${CYAN}$(msg "help_example")${NC}"
             echo "  git add file1.js file2.js"
@@ -385,12 +396,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# 최초 실행 체크
-if [ -z "$LANGUAGE" ]; then
-    first_time_setup
-fi
-
-# 색상 정의
+# 색상 정의 (first_time_setup보다 먼저 정의)
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -399,6 +405,11 @@ MAGENTA='\033[0;35m'
 CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
+
+# 최초 실행 체크
+if [ -z "$LANGUAGE" ]; then
+    first_time_setup
+fi
 
 # 브라일 로딩 애니메이션 함수
 show_braille() {
