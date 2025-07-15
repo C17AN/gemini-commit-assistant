@@ -22,6 +22,29 @@ if [ "$1" = "--setup" ]; then
     exit 0
 fi
 
+# --unsetup 옵션 처리
+if [ "$1" = "--unsetup" ]; then
+    echo "🔧 Git alias 해제 중..."
+    
+    # git ai-commit alias 해제
+    git config --global --unset alias.ai-commit
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ Git alias가 성공적으로 해제되었습니다!"
+        echo "이제 다음 명령어들만 사용할 수 있습니다:"
+        echo "  - ai-commit"
+        echo "  - aic"
+        echo ""
+        echo "💡 git ai-commit 명령어를 다시 사용하려면:"
+        echo "  ai-commit --setup"
+    else
+        echo "❌ Git alias 해제에 실패했습니다."
+        echo "💡 alias가 이미 설정되어 있지 않을 수 있습니다."
+        exit 1
+    fi
+    exit 0
+fi
+
 # 도움말 옵션 처리
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "🤖 AI Commit CLI - AI 기반 커밋 메시지 생성기"
@@ -33,10 +56,12 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo ""
     echo "옵션:"
     echo "  --setup                 # git alias 설정"
+    echo "  --unsetup               # git alias 해제"
     echo "  --help, -h              # 도움말 표시"
     echo ""
     echo "설정:"
     echo "  ai-commit --setup       # git ai-commit 명령어 활성화"
+    echo "  ai-commit --unsetup     # git ai-commit 명령어 해제"
     echo ""
     echo "예시:"
     echo "  git add ."
@@ -65,23 +90,19 @@ fi
 
 # Gemini CLI 설치 확인
 if ! command -v gemini >/dev/null 2>&1; then
-    echo -e "${RED}❌ Gemini CLI가 설치되어 있지 않습니다.${NC}"
+    echo -e "${YELLOW}⚠️  Gemini CLI가 설치되어 있지 않습니다.${NC}"
+    echo -e "${CYAN}🔧 일반 에디터로 커밋 메시지를 작성합니다...${NC}"
     echo ""
-    echo -e "${YELLOW}🔧 설치 방법:${NC}"
-    echo -e "${CYAN}   1. Node.js가 설치되어 있는지 확인:${NC}"
-    echo -e "      node --version"
-    echo ""
-    echo -e "${CYAN}   2. Gemini CLI 설치:${NC}"
-    echo -e "      ${BOLD}npm install -g @google/gemini-cli${NC}"
-    echo ""
-    echo -e "${CYAN}   3. Gemini API 키 설정:${NC}"
-    echo -e "      ${BOLD}gemini config set apiKey YOUR_API_KEY${NC}"
-    echo ""
-    echo -e "${CYAN}   4. 설치 확인:${NC}"
-    echo -e "      gemini --version"
-    echo ""
-    echo -e "${BLUE}💡 자세한 설정 방법은 AI_COMMIT_SETUP_COMPLETE.md 파일을 참고하세요.${NC}"
-    exit 1
+    
+    # 일반 git commit처럼 동작
+    if [ -z "$STAGED_DIFF" ]; then
+        echo -e "${CYAN}📦 파일을 staging합니다...${NC}"
+        git add .
+    fi
+    
+    # 에디터 열기
+    git commit
+    exit $?
 fi
 
 # 변경사항 확인
@@ -101,41 +122,8 @@ else
     exit 0
 fi
 
-# 변경사항이 너무 크면 스마트 요약 사용
-DIFF_LINES=$(echo "$DIFF" | wc -l)
-if [ "$DIFF_LINES" -gt 100 ]; then
-    echo -e "${YELLOW}⚠️  변경사항이 큽니다. 스마트 요약을 생성합니다...${NC}"
-    
-    # 파일별 변경 타입 분석
-    SMART_SUMMARY=""
-    while IFS= read -r line; do
-        if [[ -n "$line" ]]; then
-            STATUS_CODE=$(echo "$line" | cut -c1-2)
-            FILE_NAME=$(echo "$line" | cut -c4-)
-            
-            case "$STATUS_CODE" in
-                "M ")
-                    # 실제 변경사항의 일부를 추출
-                    FILE_DIFF=$(echo "$DIFF" | grep -A 5 -B 1 "$FILE_NAME" | head -10)
-                    SMART_SUMMARY="${SMART_SUMMARY}Modified: $FILE_NAME\n$FILE_DIFF\n\n"
-                    ;;
-                "A ")
-                    SMART_SUMMARY="${SMART_SUMMARY}Added: $FILE_NAME\n"
-                    ;;
-                "D ")
-                    SMART_SUMMARY="${SMART_SUMMARY}Deleted: $FILE_NAME\n"
-                    ;;
-                "??")
-                    SMART_SUMMARY="${SMART_SUMMARY}New file: $FILE_NAME\n"
-                    ;;
-            esac
-        fi
-    done <<< "$STATUS"
-    
-    ANALYSIS_TEXT="$SMART_SUMMARY"
-else
-    ANALYSIS_TEXT="$DIFF"
-fi
+# 변경사항 분석
+ANALYSIS_TEXT="$DIFF"
 
 echo -e "${CYAN}🤖 AI가 커밋 메시지를 생성 중입니다...${NC}"
 
@@ -213,36 +201,19 @@ if [ -z "$AI_MESSAGE" ]; then
     
     # Gemini CLI 실행 실패 시 처리
     if [ $GEMINI_EXIT_CODE -ne 0 ]; then
-        echo -e "${RED}❌ Gemini CLI 실행에 실패했습니다.${NC}"
+        echo -e "${YELLOW}⚠️  Gemini CLI 실행에 실패했습니다.${NC}"
+        echo -e "${CYAN}🔧 일반 에디터로 커밋 메시지를 작성합니다...${NC}"
         echo ""
         
-        # 에러 유형별 안내
-        if echo "$GEMINI_OUTPUT" | grep -q "API key"; then
-            echo -e "${YELLOW}🔑 API 키 문제:${NC}"
-            echo -e "${CYAN}   1. API 키 설정:${NC}"
-            echo -e "      ${BOLD}gemini config set apiKey YOUR_API_KEY${NC}"
-            echo ""
-            echo -e "${CYAN}   2. Google AI Studio에서 API 키 발급:${NC}"
-            echo -e "      https://ai.google.dev/"
-        elif echo "$GEMINI_OUTPUT" | grep -q "network\|connection\|timeout"; then
-            echo -e "${YELLOW}🌐 네트워크 문제:${NC}"
-            echo -e "${CYAN}   - 인터넷 연결을 확인해주세요${NC}"
-            echo -e "${CYAN}   - 방화벽 설정을 확인해주세요${NC}"
-        else
-            echo -e "${YELLOW}🔧 일반적인 해결 방법:${NC}"
-            echo -e "${CYAN}   1. Gemini CLI 재설치:${NC}"
-            echo -e "      ${BOLD}npm install -g @google/gemini-cli${NC}"
-            echo ""
-            echo -e "${CYAN}   2. 설정 상태 확인:${NC}"
-            echo -e "      ${BOLD}gemini config list${NC}"
+        # 일반 git commit처럼 동작
+        if [ -z "$STAGED_DIFF" ]; then
+            echo -e "${CYAN}📦 파일을 staging합니다...${NC}"
+            git add .
         fi
         
-        echo ""
-        echo -e "${BLUE}📝 에러 상세:${NC}"
-        echo "$GEMINI_OUTPUT"
-        echo ""
-        echo -e "${YELLOW}⚠️  스마트 분석 모드로 전환합니다...${NC}"
-        AI_MESSAGE=""  # 폴백 로직으로 이동
+        # 에디터 열기
+        git commit
+        exit $?
     else
         # "Loaded cached credentials." 제거하고 의미있는 출력 추출
         AI_MESSAGE=$(echo "$GEMINI_OUTPUT" | grep -v "Loaded cached credentials" | grep -v "^$" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
@@ -258,8 +229,17 @@ if [ -z "$AI_MESSAGE" ]; then
             if [ $SIMPLE_EXIT_CODE -eq 0 ]; then
                 AI_MESSAGE=$(echo "$SIMPLE_OUTPUT" | grep -v "Loaded cached credentials" | grep -v "^$" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
             else
-                echo -e "${YELLOW}⚠️  Simplified approach also failed. Using smart analysis...${NC}"
-                AI_MESSAGE=""  # 폴백 로직으로 이동
+                echo -e "${YELLOW}⚠️  Simplified approach also failed. Using editor...${NC}"
+                
+                # 일반 git commit처럼 동작
+                if [ -z "$STAGED_DIFF" ]; then
+                    echo -e "${CYAN}📦 파일을 staging합니다...${NC}"
+                    git add .
+                fi
+                
+                # 에디터 열기
+                git commit
+                exit $?
             fi
         fi
     fi
@@ -323,108 +303,19 @@ if [ -n "$AI_MESSAGE" ] && [ "$AI_MESSAGE" != "Loaded cached credentials." ]; th
     echo -e "${BOLD}\"$AI_MESSAGE\"${NC}"
     echo -e "${BLUE}============================================================${NC}"
 else
-    echo -e "${YELLOW}⚠️  AI 응답을 받지 못했습니다. 스마트 분석을 사용합니다...${NC}"
+    echo -e "${YELLOW}⚠️  AI 응답을 받지 못했습니다.${NC}"
+    echo -e "${CYAN}🔧 일반 에디터로 커밋 메시지를 작성합니다...${NC}"
+    echo ""
     
-    # 폴백: 더 상세한 다중 라인 메시지 생성
-    FILE_COUNT=$(echo "$STATUS" | wc -l)
-    ADDED_COUNT=$(echo "$STATUS" | grep -c "^A\|^??")
-    MODIFIED_COUNT=$(echo "$STATUS" | grep -c "^M\|^.M")
-    DELETED_COUNT=$(echo "$STATUS" | grep -c "^D\|^.D")
-    
-    # 변경사항 유형 분석
-    HAS_PACKAGE=$(echo "$STATUS" | grep -q "package\.json" && echo "true" || echo "false")
-    HAS_DOCS=$(echo "$STATUS" | grep -q "README\|\.md$" && echo "true" || echo "false")
-    HAS_SCRIPTS=$(echo "$STATUS" | grep -q "\.sh$\|\.js$\|\.ts$\|\.py$" && echo "true" || echo "false")
-    HAS_VUE=$(echo "$STATUS" | grep -q "\.vue$" && echo "true" || echo "false")
-    HAS_STYLES=$(echo "$STATUS" | grep -q "\.css$\|\.scss$\|\.sass$" && echo "true" || echo "false")
-    
-    # diff 내용 기반 분석
-    DIFF_CONTENT=$(git diff --cached 2>/dev/null | head -50)
-    IS_FORMATTING=$(echo "$DIFF_CONTENT" | grep -q "^-[[:space:]]*" && echo "$DIFF_CONTENT" | grep -q "^+[[:space:]]*" && echo "true" || echo "false")
-    IS_WHITESPACE=$(echo "$DIFF_CONTENT" | grep -q "^-.*[[:space:]]*$" && echo "true" || echo "false")
-    
-    # 커밋 타입 결정
-    if [ "$DELETED_COUNT" -gt 3 ] && [ "$ADDED_COUNT" -eq 0 ]; then
-        COMMIT_TYPE="chore"
-        TITLE="불필요한 파일 정리 및 프로젝트 구조 최적화"
-    elif [ "$IS_FORMATTING" = "true" ] || [ "$IS_WHITESPACE" = "true" ]; then
-        COMMIT_TYPE="style"
-        TITLE="코드 포맷팅 및 스타일 개선"
-    elif [ "$HAS_DOCS" = "true" ] && [ "$MODIFIED_COUNT" -gt 0 ]; then
-        COMMIT_TYPE="docs"
-        TITLE="프로젝트 문서 개선 및 가이드 업데이트"
-    elif [ "$HAS_VUE" = "true" ] || [ "$HAS_SCRIPTS" = "true" ]; then
-        if [ "$ADDED_COUNT" -gt 0 ]; then
-            COMMIT_TYPE="feat"
-            TITLE="새로운 기능 및 컴포넌트 구현"
-        else
-            COMMIT_TYPE="refactor"
-            TITLE="코드 구조 개선 및 리팩토링"
-        fi
-    elif [ "$HAS_PACKAGE" = "true" ]; then
-        COMMIT_TYPE="chore"
-        TITLE="프로젝트 설정 및 의존성 업데이트"
-    else
-        COMMIT_TYPE="chore"
-        TITLE="프로젝트 파일 업데이트"
+    # 일반 git commit처럼 동작
+    if [ -z "$STAGED_DIFF" ]; then
+        echo -e "${CYAN}📦 파일을 staging합니다...${NC}"
+        git add .
     fi
     
-    # 본문 생성 - 파일별 변경사항을 간단한 형식으로
-    BODY=""
-    
-    # 실제 변경된 파일들 분석
-    CHANGED_FILES=$(echo "$STATUS" | sed 's/^...//g' | head -10)
-    
-    # 각 파일별로 설명 추가
-    for file in $CHANGED_FILES; do
-        if [[ -n "$BODY" ]]; then
-            BODY="${BODY}
-
-
-"
-        else
-            BODY="
-
-
-"
-        fi
-        
-        # 파일 확장자에 따른 설명 생성
-        case "$file" in
-            *.js|*.ts)
-                BODY="${BODY}${file}: JavaScript/TypeScript 로직 개선 및 기능 구현"
-                ;;
-            *.vue)
-                BODY="${BODY}${file}: Vue 컴포넌트 개발 및 사용자 인터페이스 개선"
-                ;;
-            *.css|*.scss|*.sass)
-                BODY="${BODY}${file}: 스타일 시스템 및 디자인 개선"
-                ;;
-            *.md)
-                BODY="${BODY}${file}: 프로젝트 문서 및 가이드 업데이트"
-                ;;
-            package.json)
-                BODY="${BODY}${file}: 프로젝트 의존성 및 설정 관리"
-                ;;
-            *.json)
-                BODY="${BODY}${file}: 설정 파일 및 데이터 구조 업데이트"
-                ;;
-            *.sh)
-                BODY="${BODY}${file}: 스크립트 파일 개발 및 자동화 도구 개선"
-                ;;
-            *)
-                BODY="${BODY}${file}: 프로젝트 파일 업데이트 및 개선"
-                ;;
-        esac
-    done
-    
-    AI_MESSAGE="${COMMIT_TYPE}: ${TITLE}${BODY}"
-    
-    echo ""
-    echo -e "${BLUE}============================================================${NC}"
-    echo -e "${GREEN}🎯 스마트 생성 커밋 메시지:${NC}"
-    echo -e "${BOLD}\"$AI_MESSAGE\"${NC}"
-    echo -e "${BLUE}============================================================${NC}"
+    # 에디터 열기
+    git commit
+    exit $?
 fi
 
 # 변경사항 요약 출력
