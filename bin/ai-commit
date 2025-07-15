@@ -735,12 +735,6 @@ while true; do
         [Yy]* )
             if git commit -m "$AI_MESSAGE"; then
                 echo -e "${GREEN}$(msg "commit_success")${NC}"
-                echo -e "${BOLD}$(msg "commit_message") \"$AI_MESSAGE\"${NC}"
-                
-                # 최근 커밋 정보 표시
-                echo ""
-                echo -e "${CYAN}$(msg "commit_info")${NC}"
-                git log --oneline -1
             else
                 echo -e "${RED}$(msg "commit_failed")${NC}"
             fi
@@ -761,7 +755,6 @@ while true; do
             if [ -n "$EDITED_MESSAGE" ]; then
                 if git commit -m "$EDITED_MESSAGE"; then
                     echo -e "${GREEN}$(msg "edit_success")${NC}"
-                    echo -e "${BOLD}$(msg "commit_message") \"$EDITED_MESSAGE\"${NC}"
                 else
                     echo -e "${RED}$(msg "commit_failed")${NC}"
                 fi
@@ -775,7 +768,6 @@ while true; do
             if [ -n "$CUSTOM_MESSAGE" ]; then
                 if git commit -m "$CUSTOM_MESSAGE"; then
                     echo -e "${GREEN}$(msg "custom_success")${NC}"
-                    echo -e "${BOLD}$(msg "commit_message") \"$CUSTOM_MESSAGE\"${NC}"
                 else
                     echo -e "${RED}$(msg "commit_failed")${NC}"
                 fi
