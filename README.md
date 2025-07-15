@@ -4,7 +4,7 @@
 
 **English** | [한국어](README.ko.md)
 
-AI-powered commit message generator using Google Gemini CLI with **Korean/English language support**.
+AI-powered commit message generator using Google Gemini CLI (Gemini 2.5 Flash) with **Korean/English language support**.
 
 ## 📦 Installation
 

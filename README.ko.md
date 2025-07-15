@@ -4,7 +4,7 @@
 
 [English](README.md) | **한국어**
 
-Google Gemini CLI를 사용하여 **한국어/영어 지원**하는 AI 커밋 메시지 생성기입니다.
+Google Gemini CLI (Gemini 2.5 Flash)를 사용하여 **한국어/영어 지원**하는 AI 커밋 메시지 생성기입니다.
 
 ## 📦 설치
 
