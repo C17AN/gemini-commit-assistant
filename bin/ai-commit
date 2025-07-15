@@ -2,72 +2,382 @@
 
 # Gemini API를 사용한 AI 커밋 메시지 생성기 (최종 버전)
 
-# --setup 옵션 처리
-if [ "$1" = "--setup" ]; then
-    echo "🔧 Git alias 설정 중..."
-    
-    # git ai-commit alias 설정
-    git config --global alias.ai-commit '!ai-commit'
-    
-    if [ $? -eq 0 ]; then
-        echo "✅ Git alias가 성공적으로 설정되었습니다!"
-        echo "이제 다음 명령어들을 사용할 수 있습니다:"
-        echo "  - ai-commit"
-        echo "  - aic"
-        echo "  - git ai-commit"
-    else
-        echo "❌ Git alias 설정에 실패했습니다."
-        exit 1
-    fi
-    exit 0
-fi
+# 설정 파일 위치
+CONFIG_FILE="$HOME/.gemini-commit-config.json"
 
-# --unsetup 옵션 처리
-if [ "$1" = "--unsetup" ]; then
-    echo "🔧 Git alias 해제 중..."
+# 설정 파일 읽기 함수
+load_config() {
+    if [ -f "$CONFIG_FILE" ]; then
+        LANGUAGE=$(cat "$CONFIG_FILE" | grep -o '"language":"[^"]*"' | cut -d'"' -f4)
+        [ -z "$LANGUAGE" ] && LANGUAGE="ko"
+    else
+        LANGUAGE=""
+    fi
+}
+
+# 설정 파일 저장 함수
+save_config() {
+    local lang=$1
+    mkdir -p "$(dirname "$CONFIG_FILE")"
+    echo '{"language":"'$lang'"}' > "$CONFIG_FILE"
+}
+
+# 언어별 메시지 함수
+msg() {
+    local key=$1
+    case "$LANGUAGE" in
+        "en")
+            case "$key" in
+                "welcome") echo "🤖 AI Commit CLI - AI-powered commit message generator" ;;
+                "setup_progress") echo "🔧 Setting up Git alias..." ;;
+                "setup_success") echo "✅ Git alias has been successfully set up!" ;;
+                "setup_available") echo "Now you can use these commands:" ;;
+                "setup_failed") echo "❌ Failed to set up Git alias." ;;
+                "unsetup_progress") echo "🔧 Removing Git alias..." ;;
+                "unsetup_success") echo "✅ Git alias has been successfully removed!" ;;
+                "unsetup_available") echo "Now you can only use these commands:" ;;
+                "unsetup_help") echo "💡 To use git ai-commit again:" ;;
+                "unsetup_failed") echo "❌ Failed to remove Git alias." ;;
+                "unsetup_not_found") echo "💡 Alias may not be set up." ;;
+                "help_usage") echo "Usage:" ;;
+                "help_staged") echo "  ai-commit               # Generate AI commit message for staged files" ;;
+                "help_all") echo "  ai-commit --all         # Stage all files and generate AI commit message" ;;
+                "help_options") echo "Options:" ;;
+                "help_all_desc") echo "  --all, -a               # Stage all files" ;;
+                "help_configure_desc") echo "  --configure             # Configure language settings" ;;
+                "help_setup_desc") echo "  --setup                 # Set up git alias" ;;
+                "help_unsetup_desc") echo "  --unsetup               # Remove git alias" ;;
+                "help_help_desc") echo "  --help, -h              # Show help" ;;
+                "help_settings") echo "Settings:" ;;
+                "help_example") echo "Examples:" ;;
+                "help_example_staged") echo "  ai-commit               # Commit staged files only" ;;
+                "help_example_all") echo "  ai-commit --all         # Stage all files and commit" ;;
+                "unknown_option") echo "❌ Unknown option:" ;;
+                "usage_help") echo "Usage: ai-commit [--all|-a] [--configure] [--setup|--unsetup] [--help|-h]" ;;
+                "not_git_repo") echo "❌ Not a Git repository." ;;
+                "staging_all") echo "📦 Staging all files..." ;;
+                "gemini_not_installed") echo "⚠️  Gemini CLI is not installed." ;;
+                "fallback_editor") echo "🔧 Using standard editor for commit message..." ;;
+                "no_staged_files") echo "⚠️  No staged files found." ;;
+                "choose_action") echo "💡 Choose one of the following:" ;;
+                "action_1") echo "  1. ${BOLD}git add <filename>${NC} to stage specific files" ;;
+                "action_2") echo "  2. ${BOLD}git add .${NC} to stage all files" ;;
+                "action_3") echo "  3. ${BOLD}ai-commit --all${NC} to auto-stage all files" ;;
+                "unstaged_files") echo "📊 Unstaged files:" ;;
+                "no_changes") echo "📊 No changes found." ;;
+                "analyzing_staged") echo "📝 Analyzing staged file changes..." ;;
+                "ai_generating") echo "🤖 AI is generating commit message..." ;;
+                "ai_generated") echo "🎯 AI Generated Commit Message:" ;;
+                "ai_no_response") echo "⚠️  No AI response received." ;;
+                "change_summary") echo "📊 Change Summary:" ;;
+                "new_files") echo "  + $1 new files" ;;
+                "modified_files") echo "  ~ $1 modified files" ;;
+                "deleted_files") echo "  - $1 deleted files" ;;
+                "commit_prompt") echo "Use this commit message? (y)es/(n)o/(e)dit/(c)ustom:" ;;
+                "commit_success") echo "✅ Commit created successfully!" ;;
+                "commit_message") echo "📝 Commit message:" ;;
+                "commit_info") echo "📋 Commit info:" ;;
+                "commit_failed") echo "❌ Failed to create commit." ;;
+                "commit_cancelled") echo "🚫 Commit cancelled." ;;
+                "editor_starting") echo "✏️  Starting editor..." ;;
+                "edit_success") echo "✅ Edited commit created successfully!" ;;
+                "edit_cancelled") echo "🚫 Edit cancelled." ;;
+                "custom_message") echo "✏️  Enter custom commit message:" ;;
+                "custom_success") echo "✅ Custom commit created successfully!" ;;
+                "empty_message") echo "⚠️  Commit message is empty." ;;
+                "invalid_choice") echo "❌ Please enter y, n, e, or c." ;;
+                "configure_title") echo "🌐 Language Configuration" ;;
+                "configure_current") echo "📍 Current language: $1" ;;
+                "configure_select") echo "🔤 Select language / 언어를 선택하세요:" ;;
+                "configure_korean") echo "  1. 한국어 (Korean)" ;;
+                "configure_english") echo "  2. English" ;;
+                "configure_prompt") echo "Enter choice (1-2): " ;;
+                "configure_success") echo "✅ Language set to: $1" ;;
+                "configure_invalid") echo "❌ Invalid choice. Please select 1 or 2." ;;
+                "first_run_title") echo "🎉 Welcome to AI Commit Assistant!" ;;
+                "first_run_subtitle") echo "First-time setup" ;;
+                "first_run_desc") echo "Please select your preferred language for UI and commit messages:" ;;
+                *) echo "$key" ;;
+            esac
+            ;;
+        *)
+            case "$key" in
+                "welcome") echo "🤖 AI Commit CLI - AI 기반 커밋 메시지 생성기" ;;
+                "setup_progress") echo "🔧 Git alias 설정 중..." ;;
+                "setup_success") echo "✅ Git alias가 성공적으로 설정되었습니다!" ;;
+                "setup_available") echo "이제 다음 명령어들을 사용할 수 있습니다:" ;;
+                "setup_failed") echo "❌ Git alias 설정에 실패했습니다." ;;
+                "unsetup_progress") echo "🔧 Git alias 해제 중..." ;;
+                "unsetup_success") echo "✅ Git alias가 성공적으로 해제되었습니다!" ;;
+                "unsetup_available") echo "이제 다음 명령어들만 사용할 수 있습니다:" ;;
+                "unsetup_help") echo "💡 git ai-commit 명령어를 다시 사용하려면:" ;;
+                "unsetup_failed") echo "❌ Git alias 해제에 실패했습니다." ;;
+                "unsetup_not_found") echo "💡 alias가 이미 설정되어 있지 않을 수 있습니다." ;;
+                "help_usage") echo "사용법:" ;;
+                "help_staged") echo "  ai-commit               # staged 파일로 AI 커밋 메시지 생성" ;;
+                "help_all") echo "  ai-commit --all         # 모든 파일을 staging 후 AI 커밋 메시지 생성" ;;
+                "help_options") echo "옵션:" ;;
+                "help_all_desc") echo "  --all, -a               # 모든 파일을 staging에 추가" ;;
+                "help_configure_desc") echo "  --configure             # 언어 설정 변경" ;;
+                "help_setup_desc") echo "  --setup                 # git alias 설정" ;;
+                "help_unsetup_desc") echo "  --unsetup               # git alias 해제" ;;
+                "help_help_desc") echo "  --help, -h              # 도움말 표시" ;;
+                "help_settings") echo "설정:" ;;
+                "help_example") echo "예시:" ;;
+                "help_example_staged") echo "  ai-commit               # staged 파일만 커밋" ;;
+                "help_example_all") echo "  ai-commit --all         # 모든 파일을 staging 후 커밋" ;;
+                "unknown_option") echo "❌ 알 수 없는 옵션:" ;;
+                "usage_help") echo "사용법: ai-commit [--all|-a] [--configure] [--setup|--unsetup] [--help|-h]" ;;
+                "not_git_repo") echo "❌ Git 저장소가 아닙니다." ;;
+                "staging_all") echo "📦 모든 파일을 staging합니다..." ;;
+                "gemini_not_installed") echo "⚠️  Gemini CLI가 설치되어 있지 않습니다." ;;
+                "fallback_editor") echo "🔧 일반 에디터로 커밋 메시지를 작성합니다..." ;;
+                "no_staged_files") echo "⚠️  staging된 파일이 없습니다." ;;
+                "choose_action") echo "💡 다음 중 하나를 선택하세요:" ;;
+                "action_1") echo "  1. ${BOLD}git add <파일명>${NC} 으로 특정 파일을 staging" ;;
+                "action_2") echo "  2. ${BOLD}git add .${NC} 으로 모든 파일을 staging" ;;
+                "action_3") echo "  3. ${BOLD}ai-commit --all${NC} 으로 모든 파일을 자동 staging" ;;
+                "unstaged_files") echo "📊 unstaged 파일 목록:" ;;
+                "no_changes") echo "📊 변경된 파일이 없습니다." ;;
+                "analyzing_staged") echo "📝 Staged 파일의 변경사항을 분석합니다..." ;;
+                "ai_generating") echo "🤖 AI가 커밋 메시지를 생성 중입니다..." ;;
+                "ai_generated") echo "🎯 AI 생성 커밋 메시지:" ;;
+                "ai_no_response") echo "⚠️  AI 응답을 받지 못했습니다." ;;
+                "change_summary") echo "📊 변경사항 요약:" ;;
+                "new_files") echo "  + $1 새 파일" ;;
+                "modified_files") echo "  ~ $1 수정된 파일" ;;
+                "deleted_files") echo "  - $1 삭제된 파일" ;;
+                "commit_prompt") echo "이 커밋 메시지를 사용하시겠습니까? (y)es/(n)o/(e)dit/(c)ustom:" ;;
+                "commit_success") echo "✅ 커밋이 성공적으로 생성되었습니다!" ;;
+                "commit_message") echo "📝 커밋 메시지:" ;;
+                "commit_info") echo "📋 커밋 정보:" ;;
+                "commit_failed") echo "❌ 커밋 생성에 실패했습니다." ;;
+                "commit_cancelled") echo "🚫 커밋이 취소되었습니다." ;;
+                "editor_starting") echo "✏️  에디터를 시작합니다..." ;;
+                "edit_success") echo "✅ 편집된 커밋이 성공적으로 생성되었습니다!" ;;
+                "edit_cancelled") echo "🚫 편집이 취소되었습니다." ;;
+                "custom_message") echo "✏️  커스텀 커밋 메시지를 입력하세요:" ;;
+                "custom_success") echo "✅ 커스텀 커밋이 성공적으로 생성되었습니다!" ;;
+                "empty_message") echo "⚠️  커밋 메시지가 비어있습니다." ;;
+                "invalid_choice") echo "❌ y, n, e, 또는 c를 입력해주세요." ;;
+                "configure_title") echo "🌐 언어 설정" ;;
+                "configure_current") echo "📍 현재 언어: $1" ;;
+                "configure_select") echo "🔤 언어를 선택하세요 / Select language:" ;;
+                "configure_korean") echo "  1. 한국어 (Korean)" ;;
+                "configure_english") echo "  2. English" ;;
+                "configure_prompt") echo "선택하세요 (1-2): " ;;
+                "configure_success") echo "✅ 언어가 설정되었습니다: $1" ;;
+                "configure_invalid") echo "❌ 잘못된 선택입니다. 1 또는 2를 선택해주세요." ;;
+                "first_run_title") echo "🎉 AI Commit Assistant에 오신 것을 환영합니다!" ;;
+                "first_run_subtitle") echo "최초 설정" ;;
+                "first_run_desc") echo "UI와 커밋 메시지에 사용할 언어를 선택해주세요:" ;;
+                *) echo "$key" ;;
+            esac
+            ;;
+    esac
+}
+
+# 언어 설정 함수
+configure_language() {
+    echo -e "${BLUE}============================================================${NC}"
+    echo -e "${BOLD}$(msg "configure_title")${NC}"
+    echo -e "${BLUE}============================================================${NC}"
+    echo ""
     
-    # git ai-commit alias 해제
-    git config --global --unset alias.ai-commit
-    
-    if [ $? -eq 0 ]; then
-        echo "✅ Git alias가 성공적으로 해제되었습니다!"
-        echo "이제 다음 명령어들만 사용할 수 있습니다:"
-        echo "  - ai-commit"
-        echo "  - aic"
+    if [ -n "$LANGUAGE" ]; then
+        local current_lang_name
+        if [ "$LANGUAGE" = "en" ]; then
+            current_lang_name="English"
+        else
+            current_lang_name="한국어"
+        fi
+        echo -e "${CYAN}$(msg "configure_current" "$current_lang_name")${NC}"
         echo ""
-        echo "💡 git ai-commit 명령어를 다시 사용하려면:"
-        echo "  ai-commit --setup"
-    else
-        echo "❌ Git alias 해제에 실패했습니다."
-        echo "💡 alias가 이미 설정되어 있지 않을 수 있습니다."
-        exit 1
     fi
-    exit 0
-fi
+    
+    echo -e "${CYAN}$(msg "configure_select")${NC}"
+    echo -e "$(msg "configure_korean")"
+    echo -e "$(msg "configure_english")"
+    echo ""
+    
+    while true; do
+        read -p "$(msg "configure_prompt")" choice
+        case $choice in
+            1)
+                LANGUAGE="ko"
+                save_config "ko"
+                echo -e "${GREEN}$(msg "configure_success" "한국어")${NC}"
+                break
+                ;;
+            2)
+                LANGUAGE="en"
+                save_config "en"
+                echo -e "${GREEN}$(msg "configure_success" "English")${NC}"
+                break
+                ;;
+            *)
+                echo -e "${RED}$(msg "configure_invalid")${NC}"
+                ;;
+        esac
+    done
+}
 
-# 도움말 옵션 처리
-if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-    echo "🤖 AI Commit CLI - AI 기반 커밋 메시지 생성기"
+# 최초 실행 체크 및 언어 설정
+first_time_setup() {
+    echo -e "${MAGENTA}$(msg "first_run_title")${NC}"
+    echo -e "${BLUE}============================================================${NC}"
+    echo -e "${BOLD}$(msg "first_run_subtitle")${NC}"
+    echo -e "${BLUE}============================================================${NC}"
     echo ""
-    echo "사용법:"
-    echo "  ai-commit               # AI 커밋 메시지 생성"
-    echo "  aic                     # 축약 명령어"
-    echo "  git ai-commit           # git alias (설정 필요)"
+    echo -e "${CYAN}$(msg "first_run_desc")${NC}"
     echo ""
-    echo "옵션:"
-    echo "  --setup                 # git alias 설정"
-    echo "  --unsetup               # git alias 해제"
-    echo "  --help, -h              # 도움말 표시"
+    
+    echo -e "$(msg "configure_korean")"
+    echo -e "$(msg "configure_english")"
     echo ""
-    echo "설정:"
-    echo "  ai-commit --setup       # git ai-commit 명령어 활성화"
-    echo "  ai-commit --unsetup     # git ai-commit 명령어 해제"
-    echo ""
-    echo "예시:"
-    echo "  git add ."
-    echo "  ai-commit"
-    echo ""
-    exit 0
+    
+    while true; do
+        read -p "$(msg "configure_prompt")" choice
+        case $choice in
+            1)
+                LANGUAGE="ko"
+                save_config "ko"
+                echo ""
+                echo -e "${GREEN}$(msg "configure_success" "한국어")${NC}"
+                echo ""
+                break
+                ;;
+            2)
+                LANGUAGE="en"
+                save_config "en"
+                echo ""
+                echo -e "${GREEN}$(msg "configure_success" "English")${NC}"
+                echo ""
+                break
+                ;;
+            *)
+                echo -e "${RED}$(msg "configure_invalid")${NC}"
+                ;;
+        esac
+    done
+}
+
+# 설정 로드
+load_config
+
+# 플래그 변수 초기화
+STAGE_ALL=false
+
+# 인자 처리
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --setup)
+            # 설정이 없으면 먼저 언어 설정
+            if [ -z "$LANGUAGE" ]; then
+                first_time_setup
+            fi
+            
+            echo -e "${CYAN}$(msg "setup_progress")${NC}"
+            
+            # git ai-commit alias 설정
+            git config --global alias.ai-commit '!ai-commit'
+            
+            if [ $? -eq 0 ]; then
+                echo -e "${GREEN}$(msg "setup_success")${NC}"
+                echo -e "${CYAN}$(msg "setup_available")${NC}"
+                echo "  - ai-commit"
+                echo "  - aic"
+                echo "  - git ai-commit"
+            else
+                echo -e "${RED}$(msg "setup_failed")${NC}"
+                exit 1
+            fi
+            exit 0
+            ;;
+        --unsetup)
+            # 설정이 없으면 먼저 언어 설정
+            if [ -z "$LANGUAGE" ]; then
+                first_time_setup
+            fi
+            
+            echo -e "${CYAN}$(msg "unsetup_progress")${NC}"
+            
+            # git ai-commit alias 해제
+            git config --global --unset alias.ai-commit
+            
+            if [ $? -eq 0 ]; then
+                echo -e "${GREEN}$(msg "unsetup_success")${NC}"
+                echo -e "${CYAN}$(msg "unsetup_available")${NC}"
+                echo "  - ai-commit"
+                echo "  - aic"
+                echo ""
+                echo -e "${CYAN}$(msg "unsetup_help")${NC}"
+                echo "  ai-commit --setup"
+            else
+                echo -e "${RED}$(msg "unsetup_failed")${NC}"
+                echo -e "${CYAN}$(msg "unsetup_not_found")${NC}"
+                exit 1
+            fi
+            exit 0
+            ;;
+        --configure)
+            # 설정이 없으면 먼저 언어 설정
+            if [ -z "$LANGUAGE" ]; then
+                first_time_setup
+            else
+                configure_language
+            fi
+            exit 0
+            ;;
+        --all|-a)
+            STAGE_ALL=true
+            shift
+            ;;
+        --help|-h)
+            # 설정이 없으면 먼저 언어 설정
+            if [ -z "$LANGUAGE" ]; then
+                first_time_setup
+            fi
+            
+            echo -e "${BOLD}$(msg "welcome")${NC}"
+            echo ""
+            echo -e "${CYAN}$(msg "help_usage")${NC}"
+            echo -e "$(msg "help_staged")"
+            echo -e "$(msg "help_all")"
+            echo "  aic                     # 축약 명령어"
+            echo "  git ai-commit           # git alias (설정 필요)"
+            echo ""
+            echo -e "${CYAN}$(msg "help_options")${NC}"
+            echo -e "$(msg "help_all_desc")"
+            echo -e "$(msg "help_configure_desc")"
+            echo -e "$(msg "help_setup_desc")"
+            echo -e "$(msg "help_unsetup_desc")"
+            echo -e "$(msg "help_help_desc")"
+            echo ""
+            echo -e "${CYAN}$(msg "help_settings")${NC}"
+            echo "  ai-commit --setup       # git ai-commit 명령어 활성화"
+            echo "  ai-commit --unsetup     # git ai-commit 명령어 해제"
+            echo "  ai-commit --configure   # 언어 설정 변경"
+            echo ""
+            echo -e "${CYAN}$(msg "help_example")${NC}"
+            echo "  git add file1.js file2.js"
+            echo -e "$(msg "help_example_staged")"
+            echo ""
+            echo -e "$(msg "help_example_all")"
+            echo ""
+            exit 0
+            ;;
+        *)
+            echo -e "${RED}$(msg "unknown_option") $1${NC}"
+            echo -e "$(msg "usage_help")"
+            exit 1
+            ;;
+    esac
+done
+
+# 최초 실행 체크
+if [ -z "$LANGUAGE" ]; then
+    first_time_setup
 fi
 
 # 색상 정의
@@ -80,27 +390,42 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-echo -e "${MAGENTA}🤖 AI 커밋 메시지 생성기 (Gemini 기반)${NC}"
+# 브라일 로딩 애니메이션 함수
+show_braille() {
+    local pid=$1
+    local delay=0.08
+    local braille="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+    local i=0
+    
+    while kill -0 "$pid" 2>/dev/null; do
+        printf "\r${CYAN}$(msg "ai_generating") ${braille:$i:1}${NC}"
+        i=$(((i+1) % ${#braille}))
+        sleep $delay
+    done
+    printf "\r${CYAN}$(msg "ai_generating") ✓${NC}\n"
+}
+
+echo -e "${MAGENTA}$(msg "welcome")${NC}"
 
 # Git 저장소 확인
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    echo -e "${RED}❌ Git 저장소가 아닙니다.${NC}"
+    echo -e "${RED}$(msg "not_git_repo")${NC}"
     exit 1
+fi
+
+# --all 플래그가 있으면 모든 파일을 staging
+if [ "$STAGE_ALL" = true ]; then
+    echo -e "${CYAN}$(msg "staging_all")${NC}"
+    git add .
 fi
 
 # Gemini CLI 설치 확인
 if ! command -v gemini >/dev/null 2>&1; then
-    echo -e "${YELLOW}⚠️  Gemini CLI가 설치되어 있지 않습니다.${NC}"
-    echo -e "${CYAN}🔧 일반 에디터로 커밋 메시지를 작성합니다...${NC}"
+    echo -e "${YELLOW}$(msg "gemini_not_installed")${NC}"
+    echo -e "${CYAN}$(msg "fallback_editor")${NC}"
     echo ""
     
     # 일반 git commit처럼 동작
-    if [ -z "$STAGED_DIFF" ]; then
-        echo -e "${CYAN}📦 파일을 staging합니다...${NC}"
-        git add .
-    fi
-    
-    # 에디터 열기
     git commit
     exit $?
 fi
@@ -110,51 +435,75 @@ STAGED_DIFF=$(git diff --cached 2>/dev/null)
 UNSTAGED_DIFF=$(git diff 2>/dev/null)
 STATUS=$(git status --porcelain 2>/dev/null)
 
-# 적절한 diff 선택
-if [ -n "$STAGED_DIFF" ]; then
-    DIFF="$STAGED_DIFF"
-    echo -e "${CYAN}📝 Staged 파일의 변경사항을 분석합니다...${NC}"
-elif [ -n "$UNSTAGED_DIFF" ]; then
-    DIFF="$UNSTAGED_DIFF"
-    echo -e "${CYAN}📝 Unstaged 파일의 변경사항을 분석합니다...${NC}"
-else
-    echo -e "${YELLOW}커밋할 변경사항이 없습니다.${NC}"
-    exit 0
+# staged 파일이 있는지 확인
+if [ -z "$STAGED_DIFF" ]; then
+    echo -e "${YELLOW}$(msg "no_staged_files")${NC}"
+    echo ""
+    echo -e "${CYAN}$(msg "choose_action")${NC}"
+    echo -e "$(msg "action_1")"
+    echo -e "$(msg "action_2")"
+    echo -e "$(msg "action_3")"
+    echo ""
+    
+    if [ -n "$UNSTAGED_DIFF" ]; then
+        echo -e "${CYAN}$(msg "unstaged_files")${NC}"
+        git status --short | head -10
+        if [ $(git status --short | wc -l) -gt 10 ]; then
+            echo -e "${YELLOW}... 그리고 $(expr $(git status --short | wc -l) - 10)개 파일 더${NC}"
+        fi
+    else
+        echo -e "${CYAN}$(msg "no_changes")${NC}"
+    fi
+    exit 1
 fi
+
+DIFF="$STAGED_DIFF"
+echo -e "${CYAN}$(msg "analyzing_staged")${NC}"
 
 # 변경사항 분석
 ANALYSIS_TEXT="$DIFF"
 
-echo -e "${CYAN}🤖 AI가 커밋 메시지를 생성 중입니다...${NC}"
+# 언어별 Gemini 프롬프트 생성
+if [ "$LANGUAGE" = "en" ]; then
+    DETAILED_MULTILINE_PROMPT="You are a git commit message generator. Analyze these git changes and generate a detailed multiline commit message.
 
-# Gemini API 프롬프트 생성
-PROMPT="Please analyze the following git changes and generate a concise commit message.
+ANALYZE THE CHANGES CAREFULLY:
+- Look at file extensions and diff content to understand what changed
+- Identify if changes are: code improvements, style/formatting, documentation, features, or cleanup
+- Pay attention to deleted files, formatting changes, whitespace fixes
 
-Rules for commit message:
-1. Start with a verb (Add, Fix, Update, Remove, Refactor, etc.)
-2. Use present tense
-3. Capitalize first letter
-4. Keep under 50 characters
-5. No period at the end
-6. Be specific about what changed
+GENERATE MESSAGE IN THIS FORMAT:
+
+TITLE (50 chars max):
+- Start with: feat: (new features), refactor: (code improvement), style: (formatting), docs: (documentation), chore: (cleanup/maintenance)
+- Brief summary in English
+
+BODY (after TWO blank lines):
+- filename: specific description of changes
+- IMPORTANT: TWO blank lines between each file
+- Use English language
 
 Git Status:
 $STATUS
 
-Git Changes:
-$ANALYSIS_TEXT
+Changes Analysis:
+$(echo "$ANALYSIS_TEXT" | head -20)
 
-Generate only one commit message, nothing else:"
+EXACT FORMAT REQUIRED (copy this structure):
 
-# 임시 파일에 프롬프트 저장
-TEMP_PROMPT="/tmp/gemini_prompt_$$.txt"
-echo "$PROMPT" > "$TEMP_PROMPT"
+feat: Implement user authentication system and loading components
 
-# Gemini CLI 호출 시도
-AI_MESSAGE=""
 
-# 상세한 다중 라인 커밋 메시지를 위한 프롬프트 생성
-DETAILED_MULTILINE_PROMPT="You are a git commit message generator. Analyze these git changes and generate a detailed multiline commit message.
+src/utils/auth.ts: JWT token validation and user permission management
+
+
+src/components/LoadingSpinner.vue: Improved user experience during async operations
+
+CRITICAL: Use exactly TWO newlines between title and body, and TWO newlines between each file.
+Keep descriptions under 80 characters.
+Generate ONLY the commit message, no quotes:"
+else
+    DETAILED_MULTILINE_PROMPT="You are a git commit message generator. Analyze these git changes and generate a detailed multiline commit message.
 
 ANALYZE THE CHANGES CAREFULLY:
 - Look at file extensions and diff content to understand what changed
@@ -191,27 +540,37 @@ src/components/LoadingSpinner.vue: 비동기 작업 중 사용자 경험 개선
 CRITICAL: Use exactly TWO newlines between title and body, and TWO newlines between each file.
 Keep descriptions under 80 characters.
 Generate ONLY the commit message, no quotes:"
+fi
+
+# Gemini CLI 호출 시도
+AI_MESSAGE=""
 
 if [ -z "$AI_MESSAGE" ]; then
-    echo -e "${CYAN}🔍 Generating detailed multiline commit message...${NC}"
+    # 백그라운드에서 Gemini CLI 실행
+    TEMP_OUTPUT="/tmp/gemini_output_$$"
+    (gemini --prompt "$DETAILED_MULTILINE_PROMPT" 2>&1 > "$TEMP_OUTPUT"; echo $? > "/tmp/gemini_exit_$$") &
+    GEMINI_PID=$!
     
-    # Gemini CLI 출력을 캡처 및 에러 처리
-    GEMINI_OUTPUT=$(gemini --prompt "$DETAILED_MULTILINE_PROMPT" 2>&1)
-    GEMINI_EXIT_CODE=$?
+    # 브라일 애니메이션 시작
+    show_braille $GEMINI_PID
+    
+    # 프로세스 완료 대기
+    wait $GEMINI_PID
+    
+    # 결과 읽기
+    GEMINI_OUTPUT=$(cat "$TEMP_OUTPUT")
+    GEMINI_EXIT_CODE=$(cat "/tmp/gemini_exit_$$")
+    
+    # 임시 파일 정리
+    rm -f "$TEMP_OUTPUT" "/tmp/gemini_exit_$$"
     
     # Gemini CLI 실행 실패 시 처리
     if [ $GEMINI_EXIT_CODE -ne 0 ]; then
-        echo -e "${YELLOW}⚠️  Gemini CLI 실행에 실패했습니다.${NC}"
-        echo -e "${CYAN}🔧 일반 에디터로 커밋 메시지를 작성합니다...${NC}"
+        echo -e "${YELLOW}$(msg "gemini_not_installed")${NC}"
+        echo -e "${CYAN}$(msg "fallback_editor")${NC}"
         echo ""
         
         # 일반 git commit처럼 동작
-        if [ -z "$STAGED_DIFF" ]; then
-            echo -e "${CYAN}📦 파일을 staging합니다...${NC}"
-            git add .
-        fi
-        
-        # 에디터 열기
         git commit
         exit $?
     else
@@ -222,9 +581,26 @@ if [ -z "$AI_MESSAGE" ]; then
         MSG_LENGTH=${#AI_MESSAGE}
         if [ "$MSG_LENGTH" -lt 30 ]; then
             echo -e "${YELLOW}⚠️  Message too short: $MSG_LENGTH chars. Trying simplified approach...${NC}"
-            SIMPLE_PROMPT="Generate a detailed Korean commit message with title and body for: $(echo "$STATUS" | head -3 | tr '\n' ' ')"
-            SIMPLE_OUTPUT=$(gemini --prompt "$SIMPLE_PROMPT" 2>&1)
-            SIMPLE_EXIT_CODE=$?
+            
+            # 언어별 단순 프롬프트
+            if [ "$LANGUAGE" = "en" ]; then
+                SIMPLE_PROMPT="Generate a detailed English commit message with title and body for: $(echo "$STATUS" | head -3 | tr '\n' ' ')"
+            else
+                SIMPLE_PROMPT="Generate a detailed Korean commit message with title and body for: $(echo "$STATUS" | head -3 | tr '\n' ' ')"
+            fi
+            
+            # 단순 접근법도 애니메이션과 함께
+            TEMP_OUTPUT2="/tmp/gemini_simple_$$"
+            (gemini --prompt "$SIMPLE_PROMPT" 2>&1 > "$TEMP_OUTPUT2"; echo $? > "/tmp/gemini_simple_exit_$$") &
+            SIMPLE_PID=$!
+            
+            # 브라일 애니메이션으로 재시도
+            show_braille $SIMPLE_PID
+            wait $SIMPLE_PID
+            
+            SIMPLE_OUTPUT=$(cat "$TEMP_OUTPUT2")
+            SIMPLE_EXIT_CODE=$(cat "/tmp/gemini_simple_exit_$$")
+            rm -f "$TEMP_OUTPUT2" "/tmp/gemini_simple_exit_$$"
             
             if [ $SIMPLE_EXIT_CODE -eq 0 ]; then
                 AI_MESSAGE=$(echo "$SIMPLE_OUTPUT" | grep -v "Loaded cached credentials" | grep -v "^$" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
@@ -232,21 +608,12 @@ if [ -z "$AI_MESSAGE" ]; then
                 echo -e "${YELLOW}⚠️  Simplified approach also failed. Using editor...${NC}"
                 
                 # 일반 git commit처럼 동작
-                if [ -z "$STAGED_DIFF" ]; then
-                    echo -e "${CYAN}📦 파일을 staging합니다...${NC}"
-                    git add .
-                fi
-                
-                # 에디터 열기
                 git commit
                 exit $?
             fi
         fi
     fi
 fi
-
-# 임시 파일 정리
-rm -f "$TEMP_PROMPT"
 
 # AI 응답 처리
 if [ -n "$AI_MESSAGE" ] && [ "$AI_MESSAGE" != "Loaded cached credentials." ]; then
@@ -299,108 +666,88 @@ if [ -n "$AI_MESSAGE" ] && [ "$AI_MESSAGE" != "Loaded cached credentials." ]; th
     
     echo ""
     echo -e "${BLUE}============================================================${NC}"
-    echo -e "${GREEN}🎯 AI 생성 커밋 메시지:${NC}"
+    echo -e "${GREEN}$(msg "ai_generated")${NC}"
     echo -e "${BOLD}\"$AI_MESSAGE\"${NC}"
     echo -e "${BLUE}============================================================${NC}"
 else
-    echo -e "${YELLOW}⚠️  AI 응답을 받지 못했습니다.${NC}"
-    echo -e "${CYAN}🔧 일반 에디터로 커밋 메시지를 작성합니다...${NC}"
+    echo -e "${YELLOW}$(msg "ai_no_response")${NC}"
+    echo -e "${CYAN}$(msg "fallback_editor")${NC}"
     echo ""
     
     # 일반 git commit처럼 동작
-    if [ -z "$STAGED_DIFF" ]; then
-        echo -e "${CYAN}📦 파일을 staging합니다...${NC}"
-        git add .
-    fi
-    
-    # 에디터 열기
     git commit
     exit $?
 fi
 
 # 변경사항 요약 출력
 echo ""
-echo -e "${CYAN}📊 변경사항 요약:${NC}"
+echo -e "${CYAN}$(msg "change_summary")${NC}"
 ADDED_FILES=$(echo "$STATUS" | grep "^??\|^A" | wc -l)
 MODIFIED_FILES=$(echo "$STATUS" | grep "^.M\|^M" | wc -l)
 DELETED_FILES=$(echo "$STATUS" | grep "^.D\|^D" | wc -l)
 
-[ "$ADDED_FILES" -gt 0 ] && echo -e "  ${GREEN}+ $ADDED_FILES 새 파일${NC}"
-[ "$MODIFIED_FILES" -gt 0 ] && echo -e "  ${YELLOW}~ $MODIFIED_FILES 수정된 파일${NC}"
-[ "$DELETED_FILES" -gt 0 ] && echo -e "  ${RED}- $DELETED_FILES 삭제된 파일${NC}"
+[ "$ADDED_FILES" -gt 0 ] && echo -e "  ${GREEN}$(msg "new_files" "$ADDED_FILES")${NC}"
+[ "$MODIFIED_FILES" -gt 0 ] && echo -e "  ${YELLOW}$(msg "modified_files" "$MODIFIED_FILES")${NC}"
+[ "$DELETED_FILES" -gt 0 ] && echo -e "  ${RED}$(msg "deleted_files" "$DELETED_FILES")${NC}"
 echo ""
 
 while true; do
-    read -p "$(echo -e "${BOLD}이 커밋 메시지를 사용하시겠습니까? (y)es/(n)o/(e)dit/(c)ustom:${NC} ")" choice
+    read -p "$(echo -e "${BOLD}$(msg "commit_prompt")${NC} ")" choice
     case $choice in
         [Yy]* )
-            # staged 파일이 없으면 모든 파일 추가
-            if [ -z "$STAGED_DIFF" ]; then
-                echo -e "${CYAN}📦 파일을 staging합니다...${NC}"
-                git add .
-            fi
-            
             if git commit -m "$AI_MESSAGE"; then
-                echo -e "${GREEN}✅ 커밋이 성공적으로 생성되었습니다!${NC}"
-                echo -e "${BOLD}📝 커밋 메시지: \"$AI_MESSAGE\"${NC}"
+                echo -e "${GREEN}$(msg "commit_success")${NC}"
+                echo -e "${BOLD}$(msg "commit_message") \"$AI_MESSAGE\"${NC}"
                 
                 # 최근 커밋 정보 표시
                 echo ""
-                echo -e "${CYAN}📋 커밋 정보:${NC}"
+                echo -e "${CYAN}$(msg "commit_info")${NC}"
                 git log --oneline -1
             else
-                echo -e "${RED}❌ 커밋 생성에 실패했습니다.${NC}"
+                echo -e "${RED}$(msg "commit_failed")${NC}"
             fi
             break
             ;;
         [Nn]* )
-            echo -e "${YELLOW}🚫 커밋이 취소되었습니다.${NC}"
+            echo -e "${YELLOW}$(msg "commit_cancelled")${NC}"
             exit 0
             ;;
         [Ee]* )
             TEMP_FILE="/tmp/edit_commit_$$.txt"
             echo "$AI_MESSAGE" > "$TEMP_FILE"
-            echo -e "${CYAN}✏️  에디터를 시작합니다...${NC}"
+            echo -e "${CYAN}$(msg "editor_starting")${NC}"
             ${EDITOR:-vi} "$TEMP_FILE"
             EDITED_MESSAGE=$(cat "$TEMP_FILE" | head -1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
             rm -f "$TEMP_FILE"
             
             if [ -n "$EDITED_MESSAGE" ]; then
-                if [ -z "$STAGED_DIFF" ]; then
-                    git add .
-                fi
-                
                 if git commit -m "$EDITED_MESSAGE"; then
-                    echo -e "${GREEN}✅ 편집된 커밋이 성공적으로 생성되었습니다!${NC}"
-                    echo -e "${BOLD}📝 커밋 메시지: \"$EDITED_MESSAGE\"${NC}"
+                    echo -e "${GREEN}$(msg "edit_success")${NC}"
+                    echo -e "${BOLD}$(msg "commit_message") \"$EDITED_MESSAGE\"${NC}"
                 else
-                    echo -e "${RED}❌ 커밋 생성에 실패했습니다.${NC}"
+                    echo -e "${RED}$(msg "commit_failed")${NC}"
                 fi
             else
-                echo -e "${YELLOW}🚫 편집이 취소되었습니다.${NC}"
+                echo -e "${YELLOW}$(msg "edit_cancelled")${NC}"
             fi
             break
             ;;
         [Cc]* )
-            read -p "$(echo -e "${CYAN}✏️  커스텀 커밋 메시지를 입력하세요:${NC} ")" CUSTOM_MESSAGE
+            read -p "$(echo -e "${CYAN}$(msg "custom_message")${NC} ")" CUSTOM_MESSAGE
             if [ -n "$CUSTOM_MESSAGE" ]; then
-                if [ -z "$STAGED_DIFF" ]; then
-                    git add .
-                fi
-                
                 if git commit -m "$CUSTOM_MESSAGE"; then
-                    echo -e "${GREEN}✅ 커스텀 커밋이 성공적으로 생성되었습니다!${NC}"
-                    echo -e "${BOLD}📝 커밋 메시지: \"$CUSTOM_MESSAGE\"${NC}"
+                    echo -e "${GREEN}$(msg "custom_success")${NC}"
+                    echo -e "${BOLD}$(msg "commit_message") \"$CUSTOM_MESSAGE\"${NC}"
                 else
-                    echo -e "${RED}❌ 커밋 생성에 실패했습니다.${NC}"
+                    echo -e "${RED}$(msg "commit_failed")${NC}"
                 fi
             else
-                echo -e "${YELLOW}⚠️  커밋 메시지가 비어있습니다.${NC}"
+                echo -e "${YELLOW}$(msg "empty_message")${NC}"
             fi
             break
             ;;
         * )
-            echo -e "${RED}❌ y, n, e, 또는 c를 입력해주세요.${NC}"
+            echo -e "${RED}$(msg "invalid_choice")${NC}"
             ;;
     esac
 done
