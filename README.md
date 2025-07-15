@@ -17,17 +17,17 @@ npm install -g gemini-commit-assistant
 ```bash
 # Generate commit message for staged files
 git add file1.js file2.js
-ai-commit
+ai-commit # or aic
 
 # Stage all files and generate commit message
-ai-commit --all
+ai-commit --all # aic --all
 
 # Configure language (Korean/English)
-ai-commit --configure
+ai-commit --configure # aic --configure
 
 # Set up git alias (optional)
-ai-commit --setup
-git ai-commit  # Now available
+ai-commit --setup # aic --setup
+git ai-commit  # git aic
 ```
 
 ## 🔧 Options

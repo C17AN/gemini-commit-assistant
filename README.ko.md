@@ -17,17 +17,17 @@ npm install -g gemini-commit-assistant
 ```bash
 # staged 파일로 커밋 메시지 생성
 git add file1.js file2.js
-ai-commit
+ai-commit # (또는 aic)
 
 # 모든 파일을 staging 후 커밋 메시지 생성
-ai-commit --all
+ai-commit --all # (aic --all)
 
 # 언어 설정 (한국어/영어)
-ai-commit --configure
+ai-commit --configure # (aic --configure)
 
 # git alias 설정 (선택사항)
-ai-commit --setup
-git ai-commit  # 이제 사용 가능
+ai-commit --setup # (aic --setup)
+git ai-commit  # (git aic)
 ```
 
 ## 🔧 옵션
