@@ -9,7 +9,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepublishOnly": "chmod +x bin/ai-commit"
+    "prepublishOnly": "chmod +x bin/ai-commit && chmod +x bin/postinstall.js",
+    "postinstall": "node bin/postinstall.js"
   },
   "keywords": [
     "git",
@@ -30,6 +31,7 @@
   },
   "files": [
     "bin/ai-commit",
+    "bin/postinstall.js",
     "README.md",
     "LICENSE"
   ],
