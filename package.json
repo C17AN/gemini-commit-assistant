@@ -1,15 +1,15 @@
 {
   "name": "gemini-commit-assistant",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "AI-powered commit message generator using Gemini CLI",
   "main": "index.js",
   "bin": {
-    "ai-commit": "./bin/ai-commit",
-    "aic": "./bin/ai-commit"
+    "aic": "./bin/aic",
+    "ai-commit": "./bin/aic"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepublishOnly": "chmod +x bin/ai-commit && chmod +x bin/postinstall.js",
+    "prepublishOnly": "chmod +x bin/aic && chmod +x bin/postinstall.js",
     "postinstall": "node bin/postinstall.js"
   },
   "keywords": [
@@ -30,7 +30,7 @@
     "@google/gemini-cli": ">=0.1.0"
   },
   "files": [
-    "bin/ai-commit",
+    "bin/aic",
     "bin/postinstall.js",
     "README.md",
     "LICENSE"

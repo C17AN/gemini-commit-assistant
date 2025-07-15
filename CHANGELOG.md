@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2024-12-19
+
+### Changed
+
+- 🔄 **Primary command changed from `ai-commit` to `aic`**
+- 🏷️ `ai-commit` is now an alias for `aic` (backward compatibility maintained)
+- 📚 Updated all documentation to reflect the new primary command
+- 💡 Updated help messages and examples throughout the codebase
+- 🔧 Modified git alias setup to use `git aic` instead of `git ai-commit`
+- 📦 Updated postinstall messages to prioritize `aic` command
+
+### Added
+
+- 🌐 Smart language detection for postinstall messages (Korean/English)
+- 📊 Display of Gemini CLI quota information (60 requests/minute + 1,000 requests/day)
+
+### Fixed
+
+- 🛠️ Improved installation experience with clearer command hierarchy
+
 ## [1.0.0] - 2024-12-19
 
 ### Added

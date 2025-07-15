@@ -40,8 +40,8 @@ msg() {
                 "unsetup_failed") echo "❌ Failed to remove Git alias." ;;
                 "unsetup_not_found") echo "💡 Alias may not be set up." ;;
                 "help_usage") echo "Usage:" ;;
-                "help_staged") echo "  ai-commit               # Generate AI commit message for staged files" ;;
-                "help_all") echo "  ai-commit --all         # Stage all files and generate AI commit message" ;;
+                "help_staged") echo "  aic                     # Generate AI commit message for staged files" ;;
+                "help_all") echo "  aic --all               # Stage all files and generate AI commit message" ;;
                 "help_options") echo "Options:" ;;
                 "help_all_desc") echo "  --all, -a               # Stage all files" ;;
                 "help_configure_desc") echo "  --configure             # Configure language settings" ;;
@@ -50,10 +50,10 @@ msg() {
                 "help_help_desc") echo "  --help, -h              # Show help" ;;
                 "help_settings") echo "Settings:" ;;
                 "help_example") echo "Examples:" ;;
-                "help_example_staged") echo "  ai-commit               # Commit staged files only" ;;
-                "help_example_all") echo "  ai-commit --all         # Stage all files and commit" ;;
+                "help_example_staged") echo "  aic                     # Commit staged files only" ;;
+                "help_example_all") echo "  aic --all               # Stage all files and commit" ;;
                 "unknown_option") echo "❌ Unknown option:" ;;
-                "usage_help") echo "Usage: ai-commit [--all|-a] [--configure] [--setup|--unsetup] [--help|-h]" ;;
+                "usage_help") echo "Usage: aic [--all|-a] [--configure] [--setup|--unsetup] [--help|-h]" ;;
                 "not_git_repo") echo "❌ Not a Git repository." ;;
                 "staging_all") echo "📦 Staging all files..." ;;
                 "gemini_not_installed") echo "⚠️  Gemini CLI is not installed or not authenticated. Please follow these steps:
@@ -67,7 +67,7 @@ msg() {
                 "choose_action") echo "💡 Choose one of the following:" ;;
                 "action_1") echo "  1. ${BOLD}git add <filename>${NC} to stage specific files" ;;
                 "action_2") echo "  2. ${BOLD}git add .${NC} to stage all files" ;;
-                "action_3") echo "  3. ${BOLD}ai-commit --all${NC} to auto-stage all files" ;;
+                "action_3") echo "  3. ${BOLD}aic --all${NC} to auto-stage all files" ;;
                 "unstaged_files") echo "📊 Unstaged files:" ;;
                 "no_changes") echo "📊 No changes found." ;;
                 "analyzing_staged") echo "📝 Analyzing staged file changes..." ;;
@@ -115,12 +115,12 @@ msg() {
                 "unsetup_progress") echo "🔧 Git alias 해제 중..." ;;
                 "unsetup_success") echo "✅ Git alias가 성공적으로 해제되었습니다!" ;;
                 "unsetup_available") echo "이제 다음 명령어들만 사용할 수 있습니다:" ;;
-                "unsetup_help") echo "💡 git ai-commit 명령어를 다시 사용하려면:" ;;
+                "unsetup_help") echo "💡 git aic 명령어를 다시 사용하려면:" ;;
                 "unsetup_failed") echo "❌ Git alias 해제에 실패했습니다." ;;
                 "unsetup_not_found") echo "💡 alias가 이미 설정되어 있지 않을 수 있습니다." ;;
                 "help_usage") echo "사용법:" ;;
-                "help_staged") echo "  ai-commit               # staged 파일로 AI 커밋 메시지 생성" ;;
-                "help_all") echo "  ai-commit --all         # 모든 파일을 staging 후 AI 커밋 메시지 생성" ;;
+                "help_staged") echo "  aic                     # staged 파일로 AI 커밋 메시지 생성" ;;
+                "help_all") echo "  aic --all               # 모든 파일을 staging 후 AI 커밋 메시지 생성" ;;
                 "help_options") echo "옵션:" ;;
                 "help_all_desc") echo "  --all, -a               # 모든 파일을 staging에 추가" ;;
                 "help_configure_desc") echo "  --configure             # 언어 설정 변경" ;;
@@ -129,10 +129,10 @@ msg() {
                 "help_help_desc") echo "  --help, -h              # 도움말 표시" ;;
                 "help_settings") echo "설정:" ;;
                 "help_example") echo "예시:" ;;
-                "help_example_staged") echo "  ai-commit               # staged 파일만 커밋" ;;
-                "help_example_all") echo "  ai-commit --all         # 모든 파일을 staging 후 커밋" ;;
+                "help_example_staged") echo "  aic                     # staged 파일만 커밋" ;;
+                "help_example_all") echo "  aic --all               # 모든 파일을 staging 후 커밋" ;;
                 "unknown_option") echo "❌ 알 수 없는 옵션:" ;;
-                "usage_help") echo "사용법: ai-commit [--all|-a] [--configure] [--setup|--unsetup] [--help|-h]" ;;
+                "usage_help") echo "사용법: aic [--all|-a] [--configure] [--setup|--unsetup] [--help|-h]" ;;
                 "not_git_repo") echo "❌ Git 저장소가 아닙니다." ;;
                 "staging_all") echo "📦 모든 파일을 staging합니다..." ;;
                 "gemini_not_installed") echo "⚠️  Gemini CLI가 설치되어 있지 않거나 인증이 완료되지 않았습니다. 다음 단계를 따라주세요:
@@ -146,7 +146,7 @@ msg() {
                 "choose_action") echo "💡 다음 중 하나를 선택하세요:" ;;
                 "action_1") echo "  1. ${BOLD}git add <파일명>${NC} 으로 특정 파일을 staging" ;;
                 "action_2") echo "  2. ${BOLD}git add .${NC} 으로 모든 파일을 staging" ;;
-                "action_3") echo "  3. ${BOLD}ai-commit --all${NC} 으로 모든 파일을 자동 staging" ;;
+                "action_3") echo "  3. ${BOLD}aic --all${NC} 으로 모든 파일을 자동 staging" ;;
                 "unstaged_files") echo "📊 unstaged 파일 목록:" ;;
                 "no_changes") echo "📊 변경된 파일이 없습니다." ;;
                 "analyzing_staged") echo "📝 Staged 파일의 변경사항을 분석합니다..." ;;
@@ -289,15 +289,15 @@ while [[ $# -gt 0 ]]; do
             
             echo -e "${CYAN}$(msg "setup_progress")${NC}"
             
-            # git ai-commit alias 설정
-            git config --global alias.ai-commit '!ai-commit'
+            # git aic alias 설정
+            git config --global alias.aic '!aic'
             
             if [ $? -eq 0 ]; then
                 echo -e "${GREEN}$(msg "setup_success")${NC}"
                 echo -e "${CYAN}$(msg "setup_available")${NC}"
-                echo "  - ai-commit"
                 echo "  - aic"
-                echo "  - git ai-commit"
+                echo "  - ai-commit"
+                echo "  - git aic"
             else
                 echo -e "${RED}$(msg "setup_failed")${NC}"
                 exit 1
@@ -312,17 +312,17 @@ while [[ $# -gt 0 ]]; do
             
             echo -e "${CYAN}$(msg "unsetup_progress")${NC}"
             
-            # git ai-commit alias 해제
-            git config --global --unset alias.ai-commit
+            # git aic alias 해제
+            git config --global --unset alias.aic
             
             if [ $? -eq 0 ]; then
                 echo -e "${GREEN}$(msg "unsetup_success")${NC}"
                 echo -e "${CYAN}$(msg "unsetup_available")${NC}"
-                echo "  - ai-commit"
                 echo "  - aic"
+                echo "  - ai-commit"
                 echo ""
                 echo -e "${CYAN}$(msg "unsetup_help")${NC}"
-                echo "  ai-commit --setup"
+                echo "  aic --setup"
             else
                 echo -e "${RED}$(msg "unsetup_failed")${NC}"
                 echo -e "${CYAN}$(msg "unsetup_not_found")${NC}"
@@ -355,7 +355,7 @@ while [[ $# -gt 0 ]]; do
             echo -e "$(msg "help_staged")"
             echo -e "$(msg "help_all")"
             echo "  aic                     # 축약 명령어"
-            echo "  git ai-commit           # git alias (설정 필요)"
+            echo "  git aic                 # git alias (설정 필요)"
             echo ""
             echo -e "${CYAN}$(msg "help_options")${NC}"
             echo -e "$(msg "help_all_desc")"
@@ -365,9 +365,9 @@ while [[ $# -gt 0 ]]; do
             echo -e "$(msg "help_help_desc")"
             echo ""
             echo -e "${CYAN}$(msg "help_settings")${NC}"
-            echo "  ai-commit --setup       # git ai-commit 명령어 활성화"
-            echo "  ai-commit --unsetup     # git ai-commit 명령어 해제"
-            echo "  ai-commit --configure   # 언어 설정 변경"
+            echo "  aic --setup             # git aic 명령어 활성화"
+            echo "  aic --unsetup           # git aic 명령어 해제"
+            echo "  aic --configure         # 언어 설정 변경"
             echo ""
             echo -e "${CYAN}$(msg "help_example")${NC}"
             echo "  git add file1.js file2.js"

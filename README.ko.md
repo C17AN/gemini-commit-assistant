@@ -17,17 +17,17 @@ npm install -g gemini-commit-assistant
 ```bash
 # staged 파일로 커밋 메시지 생성
 git add file1.js file2.js
-ai-commit # (또는 aic)
+aic # (또는 ai-commit)
 
 # 모든 파일을 staging 후 커밋 메시지 생성
-ai-commit --all # (aic --all)
+aic --all # (ai-commit --all)
 
 # 언어 설정 (한국어/영어)
-ai-commit --configure # (aic --configure)
+aic --configure # (ai-commit --configure)
 
 # git alias 설정 (선택사항)
-ai-commit --setup # (aic --setup)
-git ai-commit  # (git aic)
+aic --setup # (ai-commit --setup)
+git aic  # (git ai-commit)
 ```
 
 ## 🔧 옵션
@@ -36,7 +36,7 @@ git ai-commit  # (git aic)
 | -------------- | --------------------------------------- |
 | `--all`, `-a`  | 모든 파일을 staging 후 커밋 메시지 생성 |
 | `--configure`  | 언어 설정 변경 (한국어/English)         |
-| `--setup`      | git alias 설정 (`git ai-commit`)        |
+| `--setup`      | git alias 설정 (`git aic`)              |
 | `--unsetup`    | git alias 해제                          |
 | `--help`, `-h` | 도움말 표시                             |
 
@@ -62,7 +62,7 @@ git ai-commit  # (git aic)
 ## 🌐 언어 지원
 
 최초 실행 시 언어 선택 화면이 자동으로 표시됩니다 (한국어/영어).
-`ai-commit --configure`로 언제든지 변경 가능합니다.
+`aic --configure`로 언제든지 변경 가능합니다.
 
 ## 🛠️ 설정
 
@@ -78,7 +78,7 @@ gemini # 이후 Google 계정으로 로그인
 **한국어 모드:**
 
 ```bash
-ai-commit
+aic
 # 🤖 AI 커밋 메시지 생성기 (Gemini 기반)
 # "feat: 사용자 인증 시스템 구현"
 ```
@@ -86,7 +86,7 @@ ai-commit
 **영어 모드:**
 
 ```bash
-ai-commit
+aic
 # 🤖 AI Commit CLI - AI-powered commit message generator
 # "feat: Implement user authentication system"
 ```
