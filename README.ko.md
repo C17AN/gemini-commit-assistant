@@ -54,7 +54,7 @@ git ai-commit  # 이제 사용 가능
 
 - Node.js 16.0.0+
 - Git 2.0+
-- **Gemini CLI** (설치: `npm install -g @google/generative-ai`)
+- **Gemini CLI** (설치: `npm install -g @google/gemini-cli`)
 - **Google 계정** (개인 계정 권장)
 
 ## 🌐 언어 지원
@@ -66,7 +66,7 @@ git ai-commit  # 이제 사용 가능
 
 ```bash
 # Gemini CLI 설치
-npm install -g @google/generative-ai
+npm install -g @google/gemini-cli
 
 # 인증 (권장)
 gemini config set-key your-api-key

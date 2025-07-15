@@ -54,7 +54,7 @@ git ai-commit  # Now available
 
 - Node.js 16.0.0+
 - Git 2.0+
-- **Gemini CLI** (install: `npm install -g @google/generative-ai`)
+- **Gemini CLI** (install: `npm install -g @google/gemini-cli`)
 - **Google account** (personal account recommended)
 
 ## 🌐 Language Support
@@ -66,7 +66,7 @@ Change anytime with `ai-commit --configure`.
 
 ```bash
 # Install Gemini CLI
-npm install -g @google/generative-ai
+npm install -g @google/gemini-cli
 
 # Authenticate (recommended)
 gemini config set-key your-api-key
