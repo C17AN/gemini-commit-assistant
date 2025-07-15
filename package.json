@@ -1,6 +1,6 @@
 {
   "name": "gemini-commit-assistant",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "AI-powered commit message generator using Gemini CLI",
   "main": "index.js",
   "bin": {
