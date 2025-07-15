@@ -56,8 +56,11 @@ msg() {
                 "usage_help") echo "Usage: ai-commit [--all|-a] [--configure] [--setup|--unsetup] [--help|-h]" ;;
                 "not_git_repo") echo "❌ Not a Git repository." ;;
                 "staging_all") echo "📦 Staging all files..." ;;
-                "gemini_not_installed") echo "⚠️  Gemini CLI is not installed." ;;
+                "gemini_not_installed") echo "⚠️  Gemini CLI is not installed. Try: npm install -g @google/gemini-cli" ;;
                 "fallback_editor") echo "🔧 Using standard editor for commit message..." ;;
+                "editor_prompt") echo "Do you want to write a commit message in the text editor? (y/n): " ;;
+                "editor_cancelled") echo "🚫 Cancelled." ;;
+                "editor_invalid") echo "Please enter y or n." ;;
                 "no_staged_files") echo "⚠️  No staged files found." ;;
                 "choose_action") echo "💡 Choose one of the following:" ;;
                 "action_1") echo "  1. ${BOLD}git add <filename>${NC} to stage specific files" ;;
@@ -130,8 +133,11 @@ msg() {
                 "usage_help") echo "사용법: ai-commit [--all|-a] [--configure] [--setup|--unsetup] [--help|-h]" ;;
                 "not_git_repo") echo "❌ Git 저장소가 아닙니다." ;;
                 "staging_all") echo "📦 모든 파일을 staging합니다..." ;;
-                "gemini_not_installed") echo "⚠️  Gemini CLI가 설치되어 있지 않습니다." ;;
+                "gemini_not_installed") echo "⚠️  Gemini CLI가 설치되어 있지 않습니다. 설치 명령어: npm install -g @google/gemini-cli" ;;
                 "fallback_editor") echo "🔧 일반 에디터로 커밋 메시지를 작성합니다..." ;;
+                "editor_prompt") echo "텍스트 에디터에서 커밋 메시지를 남기시겠습니까? (y/n): " ;;
+                "editor_cancelled") echo "🚫 취소되었습니다." ;;
+                "editor_invalid") echo "y 또는 n을 입력해주세요." ;;
                 "no_staged_files") echo "⚠️  staging된 파일이 없습니다." ;;
                 "choose_action") echo "💡 다음 중 하나를 선택하세요:" ;;
                 "action_1") echo "  1. ${BOLD}git add <파일명>${NC} 으로 특정 파일을 staging" ;;
@@ -422,12 +428,28 @@ fi
 # Gemini CLI 설치 확인
 if ! command -v gemini >/dev/null 2>&1; then
     echo -e "${YELLOW}$(msg "gemini_not_installed")${NC}"
-    echo -e "${CYAN}$(msg "fallback_editor")${NC}"
     echo ""
     
-    # 일반 git commit처럼 동작
-    git commit
-    exit $?
+    # 사용자에게 선택 물어보기
+    while true; do
+        read -p "$(msg "editor_prompt")" choice
+        case $choice in
+            [Yy]|[Yy]es|[예]|[네])
+                echo -e "${CYAN}$(msg "fallback_editor")${NC}"
+                echo ""
+                # 일반 git commit처럼 동작
+                git commit
+                exit $?
+                ;;
+            [Nn]|[Nn]o|[아니오]|[안됨])
+                echo -e "${CYAN}$(msg "editor_cancelled")${NC}"
+                exit 0
+                ;;
+            *)
+                echo -e "${RED}$(msg "editor_invalid")${NC}"
+                ;;
+        esac
+    done
 fi
 
 # 변경사항 확인
@@ -567,12 +589,28 @@ if [ -z "$AI_MESSAGE" ]; then
     # Gemini CLI 실행 실패 시 처리
     if [ $GEMINI_EXIT_CODE -ne 0 ]; then
         echo -e "${YELLOW}$(msg "gemini_not_installed")${NC}"
-        echo -e "${CYAN}$(msg "fallback_editor")${NC}"
         echo ""
         
-        # 일반 git commit처럼 동작
-        git commit
-        exit $?
+        # 사용자에게 선택 물어보기
+        while true; do
+            read -p "$(msg "editor_prompt")" choice
+            case $choice in
+                [Yy]|[Yy]es|[예]|[네])
+                    echo -e "${CYAN}$(msg "fallback_editor")${NC}"
+                    echo ""
+                    # 일반 git commit처럼 동작
+                    git commit
+                    exit $?
+                    ;;
+                [Nn]|[Nn]o|[아니오]|[안됨])
+                    echo -e "${CYAN}$(msg "editor_cancelled")${NC}"
+                    exit 0
+                    ;;
+                *)
+                    echo -e "${RED}$(msg "editor_invalid")${NC}"
+                    ;;
+            esac
+        done
     else
         # "Loaded cached credentials." 제거하고 의미있는 출력 추출
         AI_MESSAGE=$(echo "$GEMINI_OUTPUT" | grep -v "Loaded cached credentials" | grep -v "^$" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
