@@ -472,6 +472,13 @@ STAGED_DIFF=$(git diff --cached 2>/dev/null)
 UNSTAGED_DIFF=$(git diff 2>/dev/null)
 STATUS=$(git status --porcelain 2>/dev/null)
 
+# staged 파일만 필터링 (--all 플래그가 없을 때)
+if [ "$STAGE_ALL" = false ]; then
+    STAGED_STATUS=$(echo "$STATUS" | grep '^[AMDRC]')
+else
+    STAGED_STATUS="$STATUS"
+fi
+
 # staged 파일이 있는지 확인
 if [ -z "$STAGED_DIFF" ]; then
     echo -e "${YELLOW}$(msg "no_staged_files")${NC}"
@@ -521,7 +528,7 @@ BODY (after TWO blank lines):
 - Use English language
 
 Git Status:
-$STATUS
+$STAGED_STATUS
 
 Changes Analysis:
 $(echo "$ANALYSIS_TEXT" | head -20)
@@ -559,7 +566,7 @@ BODY (after TWO blank lines):
 - Use Korean language
 
 Git Status:
-$STATUS
+$STAGED_STATUS
 
 Changes Analysis:
 $(echo "$ANALYSIS_TEXT" | head -20)
@@ -637,9 +644,9 @@ if [ -z "$AI_MESSAGE" ]; then
             
             # 언어별 단순 프롬프트
             if [ "$LANGUAGE" = "en" ]; then
-                SIMPLE_PROMPT="Generate a detailed English commit message with title and body for: $(echo "$STATUS" | head -3 | tr '\n' ' ')"
+                SIMPLE_PROMPT="Generate a detailed English commit message with title and body for: $(echo "$STAGED_STATUS" | head -3 | tr '\n' ' ')"
             else
-                SIMPLE_PROMPT="Generate a detailed Korean commit message with title and body for: $(echo "$STATUS" | head -3 | tr '\n' ' ')"
+                SIMPLE_PROMPT="Generate a detailed Korean commit message with title and body for: $(echo "$STAGED_STATUS" | head -3 | tr '\n' ' ')"
             fi
             
             # 단순 접근법도 애니메이션과 함께
@@ -735,9 +742,16 @@ fi
 # 변경사항 요약 출력
 echo ""
 echo -e "${CYAN}$(msg "change_summary")${NC}"
-ADDED_FILES=$(echo "$STATUS" | grep "^??\|^A" | wc -l)
-MODIFIED_FILES=$(echo "$STATUS" | grep "^.M\|^M" | wc -l)
-DELETED_FILES=$(echo "$STATUS" | grep "^.D\|^D" | wc -l)
+# STAGE_ALL 플래그에 따라 파일 카운트 계산
+if [ "$STAGE_ALL" = false ]; then
+    ADDED_FILES=$(echo "$STAGED_STATUS" | grep "^A" | wc -l)
+    MODIFIED_FILES=$(echo "$STAGED_STATUS" | grep "^M" | wc -l)
+    DELETED_FILES=$(echo "$STAGED_STATUS" | grep "^D" | wc -l)
+else
+    ADDED_FILES=$(echo "$STATUS" | grep "^??\|^A" | wc -l)
+    MODIFIED_FILES=$(echo "$STATUS" | grep "^.M\|^M" | wc -l)
+    DELETED_FILES=$(echo "$STATUS" | grep "^.D\|^D" | wc -l)
+fi
 
 [ "$ADDED_FILES" -gt 0 ] && echo -e "  ${GREEN}$(msg "new_files" "$ADDED_FILES")${NC}"
 [ "$MODIFIED_FILES" -gt 0 ] && echo -e "  ${YELLOW}$(msg "modified_files" "$MODIFIED_FILES")${NC}"
